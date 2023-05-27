@@ -1,5 +1,5 @@
-# InTePReT
-InSAR Triplet Prediction &amp; Regression Tools
+# InTeRPreT
+InSAR Triplet Regression & Prediction Tools
 
 The aim of this repository is to provide a means of dealing with systematic closure phases in InSAR timseries analyses.
 
