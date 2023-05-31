@@ -18,6 +18,7 @@ class IntensityTriplet(Triplet):
         self.cubic = cubic
         self.norm = norm
         self.intensity = intensity
+        self.name = 'Intensity Triplet'
 
         if function == 'tanh':
             self.form = self._tanh

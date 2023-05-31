@@ -1,0 +1,100 @@
+import numpy as np
+from abc import abstractmethod
+from triplets import Triplet
+from typing import List
+
+
+class ClosurePredictor():
+    '''
+        Objective: ingest arbitrary set of triplets
+            train the model on a specified subset of triplets
+            predict the remaining triplets
+
+        For use with full-network phase linking, train on all triplets. The functionality to train with only a subset is designed for SBAS purposes.
+    '''
+
+    def __init__(self, triplets: List[Triplet], covariance):
+        assert len(triplets) > 0, 'Must provide at least one triplet'
+        self.triplets = triplets
+        self.covariance = covariance
+        # Quality metrics and parameters, to be defined during training
+
+        self.params = None
+        self.r_squared = None
+        self.rmse = None
+
+    def compute_bicoh(self, indices) -> np.complex64:
+        '''
+            Compute the closures for a given set of indices
+            returns the complex bicoherence for a set of indices
+        '''
+
+        bicoherence = np.zeros(indices.shape[0], dtype=np.complex64)
+        for i in range(indices.shape[0]):
+            trip = indices[i]
+            bicoherence[i] = self.covariance[trip[0], trip[1]] * \
+                self.covariance[trip[1], trip[2]] * \
+                self.covariance[trip[2], trip[0]]
+
+        return bicoherence
+
+    def plot_scatter(self, indices, ax=None, model=False):
+        '''
+            Plot the scatter plot of the model
+        '''
+        from matplotlib import pyplot as plt
+        returnax = False
+        if ax is None:
+            fig, ax = plt.subplots(nrows=1, ncols=len(self.triplets))
+        else:
+            assert len(ax) == len(self.triplets)
+            returnax = True
+
+        if model:
+            assert self.params is not None, 'Model must be trained before plotting model'
+
+        if len(self.triplets) == 1:
+            ax = [ax]
+
+        closures = np.angle(self.compute_bicoh(indices))
+
+        for i in range(len(ax)):
+            eval_triplets = self.triplets[i].get_triplets(
+                indices)
+
+            # Plot fit
+            if model:
+                ostd = np.std(eval_triplets)
+                x = np.linspace(np.min(eval_triplets) - ostd, np.max(
+                    eval_triplets) + ostd, len(eval_triplets) * 4)
+                y = x * self.params[i]
+                ax[i].plot(x, y, color='tomato', linewidth=2)
+                ax[i].plot(x, y + self.params[-1], '--',
+                           color='gray', linewidth=2, alpha=0.4)
+
+            # Plot scatter
+            ax[i].scatter(eval_triplets, closures, s=5,
+                          alpha=0.2, color='black')
+            ax[i].set_xlabel(f'{self.triplets[i].name} [-]')
+            ax[i].set_ylabel('Closures [$\mathrm{rad}$]')
+        if returnax:
+            return ax
+        else:
+            plt.tight_layout()
+            plt.show()
+
+    def _compute_rmse(self):
+        assert self.params is not None, 'Model must be trained before computing RMSE'
+        pass
+
+    def _compute_R2(self):
+        assert self.params is not None, 'Model must be trained before computing R^2'
+        pass
+
+    @ abstractmethod
+    def train(self, indices):
+        pass
+
+    def predict(self, indices):
+        assert self.params is not None, 'Model must be trained before predicting'
+        pass
