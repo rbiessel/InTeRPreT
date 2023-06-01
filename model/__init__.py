@@ -2,6 +2,8 @@ import numpy as np
 from abc import abstractmethod
 from triplets import Triplet
 from typing import List
+from cphases import util
+import scipy.stats as stats
 
 
 class ClosurePredictor():
@@ -28,7 +30,6 @@ class ClosurePredictor():
             Compute the closures for a given set of indices
             returns the complex bicoherence for a set of indices
         '''
-
         bicoherence = np.zeros(indices.shape[0], dtype=np.complex64)
         for i in range(indices.shape[0]):
             trip = indices[i]
@@ -83,18 +84,46 @@ class ClosurePredictor():
             plt.tight_layout()
             plt.show()
 
-    def _compute_rmse(self):
+    def predict_phase(self, indices) -> np.complex64:
+        '''
+            Return a correction matrix containing a minimum norm solution for the predicted phases
+        '''
+        assert self.params is not None, 'Model must be trained before predicting phase'
+
+        cphases = self.predict(indices)
+        A = util.build_A(indices, self.covariance)
+        phases = np.exp(1j * np.linalg.lstsq(A, cphases)
+                        [0], dtype=np.complex64)
+        return phases
+
+    def get_correction_matrix(self, indices, apply_in_place=False):
+        '''
+            Correct the covariance matrix
+        '''
+        phivec = self.predict_phase(indices)
+
+        if apply_in_place:
+            self.covariance *= util.phivec_to_coherence(
+                phivec, self.covariance.shape[0]).conj()
+        else:
+            return util.phivec_to_coherence(phivec, self.covariance.shape[0])
+
+    def compute_RMSE(self):
         assert self.params is not None, 'Model must be trained before computing RMSE'
         pass
 
-    def _compute_R2(self):
-        assert self.params is not None, 'Model must be trained before computing R^2'
-        pass
+    def compute_R(self, indices):
+        if len(self.triplets) > 1:
+            raise NotImplementedError(
+                'R^2 not implemented for multiple triplets')
+            assert self.params is not None, 'Model must be trained before computing R^2'
+
+        return stats.pearsonr(self.triplets[0].get_triplets(indices), np.angle(self.compute_bicoh(indices)))[0]
 
     @ abstractmethod
     def train(self, indices):
         pass
 
-    def predict(self, indices):
+    def predict(self, indices) -> np.float64:
         assert self.params is not None, 'Model must be trained before predicting'
         pass

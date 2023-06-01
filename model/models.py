@@ -19,10 +19,10 @@ class LSClosureModel(ClosurePredictor):
                 self.triplets[0].get_triplets(indices), closures, 1)
             self.params = coeff
         else:
-            # TODO: implement multiple regression
-            pass
+            raise NotImplementedError(
+                'Multiple regression not implemented yet')
 
-        self._compute_R2()
+        self.compute_R(indices)
 
         return self
 
@@ -31,13 +31,14 @@ class LSClosureModel(ClosurePredictor):
         if len(self.triplets) == 1:
             return self.triplets[0].get_triplets(indices) * self.params[0]
         else:
-            # TODO: implement multiple regression
-            pass
+            raise NotImplementedError(
+                'Multiple regression not implemented yet')
 
 
 class TheilSenClosureModel(ClosurePredictor):
 
     def __init__(self, triplets, closures):
+        raise NotImplementedError()
         assert len(
             triplets) == 1, 'Theil-Sen does not support multiple regression at this time'
         super().__init__(triplets, closures)
