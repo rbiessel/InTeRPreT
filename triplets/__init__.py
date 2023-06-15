@@ -16,4 +16,5 @@ class Triplet():
         for i in range(indices.shape[0]):
             triplets[i] = self.get_triplet(
                 indices[i][0], indices[i][1], indices[i][2])
+            
         return triplets

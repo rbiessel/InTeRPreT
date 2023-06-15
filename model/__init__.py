@@ -84,7 +84,7 @@ class ClosurePredictor():
             plt.tight_layout()
             plt.show()
 
-    def predict_phase(self, indices) -> np.complex64:
+    def predict_phase(self, indices, weights=None) -> np.complex64:
         '''
             Return a correction matrix containing a minimum norm solution for the predicted phases
         '''
@@ -92,15 +92,27 @@ class ClosurePredictor():
 
         cphases = self.predict(indices)
         A = util.build_A(indices, self.covariance)
-        phases = np.exp(1j * np.linalg.lstsq(A, cphases)
-                        [0], dtype=np.complex64)
-        return phases
 
-    def get_correction_matrix(self, indices, apply_in_place=False):
+        if weights is None:
+            phases = np.exp(1j * np.linalg.lstsq(A, cphases)
+                            [0], dtype=np.complex64)
+            return phases
+        else:
+
+            weights = util.coherence_to_phivec(
+                weights)
+            weights = np.diag(np.abs(weights**2))
+            # assert len(
+            #     weights.shape) == 2 and weights.shape[0] == weights.shape[1], 'Weights must be a square matrix'
+            Qinv = np.linalg.pinv(weights)
+            phases = Qinv @ A.T @ np.linalg.pinv(A @ Qinv @ A.T) @ cphases
+            return np.exp(1j * phases, dtype=np.complex64)
+
+    def get_correction_matrix(self, indices, apply_in_place=False, weights=None) -> np.complex64:
         '''
-            Correct the covariance matrix
+            Return the already correction matrix for a given set of indices. 
         '''
-        phivec = self.predict_phase(indices)
+        phivec = self.predict_phase(indices, weights=weights)
 
         if apply_in_place:
             self.covariance *= util.phivec_to_coherence(

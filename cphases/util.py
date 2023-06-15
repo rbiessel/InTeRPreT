@@ -9,30 +9,6 @@ from scipy.stats import chi2
 from matplotlib import pyplot as plt
 
 
-def eval_sytstematic_closure(amptriplets, model, form='linear'):
-    '''
-        Evaluate amplitude triplets based on model parameters in either a linear or cubic root form
-
-        linear form neglects the constant/intercept term
-
-        lineari includes the constant
-
-    '''
-    if form is 'linear':
-        est_closures = model[0] * amptriplets.flatten()
-    if form is 'lineari':
-        est_closures = model[0] * amptriplets.flatten() + model[1]
-    elif form is 'root3':
-        est_closures = model[0] * np.sign(amptriplets) * np.abs(
-            amptriplets.flatten())**(1/3) + model[1] * amptriplets.flatten()
-    elif form is 'root5':
-        est_closures = model[0] * np.sign(amptriplets) * np.abs(
-            amptriplets.flatten())**(1/5) + model[1] * np.sign(amptriplets) * np.abs(
-            amptriplets.flatten())**(1/3) + model[2] * amptriplets.flatten()
-
-    return est_closures
-
-
 def get_adjacent_triplets(num):
     '''
         Return an array of indexes corresponding only to triplets immediately adjacent to each other
@@ -153,30 +129,6 @@ def phivec_to_coherence(phi_vec: np.complex64, n: np.int8) -> np.complex64:
     coherence = coherence * coherence.T.conj()
 
     return coherence
-
-
-def least_norm(A, closures: np.float32 or np.float64, pseudo_inv=None, pinv=False, C=None) -> np.complex64:
-    '''
-        Solve: Ax = b
-        Find the minimum norm vector 'x' of phases that can explain 'b' phase closures
-
-        b should be a float in radians
-    '''
-
-    if pseudo_inv is not None:
-        return np.exp(1j * pseudo_inv @ closures)
-
-    if C is None:
-        C = np.eye(A.shape[1])
-    iC = np.linalg.inv(C)
-
-    if pinv and not pseudo_inv:
-        phis = np.linalg.pinv(A) @ closures
-
-    else:
-        phis = A.T @ np.linalg.inv(A @ A.T) @ closures
-
-    return np.exp(1j * phis)
 
 
 def phi_to_closure(A, phic) -> np.complex64:
