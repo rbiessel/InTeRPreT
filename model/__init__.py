@@ -94,7 +94,7 @@ class ClosurePredictor():
         A = util.build_A(indices, self.covariance)
 
         if weights is None:
-            phases = np.exp(1j * np.linalg.lstsq(A, cphases)
+            phases = np.exp(1j * np.linalg.lstsq(A, cphases, rcond=None)
                             [0], dtype=np.complex64)
             return phases
         else:
